@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nest-backend
+  namespace: nest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nest-backend
+  template:
+    metadata:
+      labels:
+        app: nest-backend
+    spec:
+      containers:
+      - name: backend
+        image: nest-backend:local
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          echo "Waiting for database to be ready..."
+          sleep 10
+          echo "Setting up Django environment..."
+          export DJANGO_SETTINGS_MODULE=config.settings
+          export PYTHONPATH=/home/owasp
+          echo "Running migrations..."
+          python manage.py migrate
+          echo "Starting server..."
+          python manage.py runserver 0.0.0.0:8000
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "config.settings"
+        - name: PYTHONPATH
+          value: "/home/owasp"
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        - secretRef:
+            name: backend-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nest-backend
+  namespace: nest
+spec:
+  selector:
+    app: nest-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
