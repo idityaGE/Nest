@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nest-frontend
+  namespace: nest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nest-frontend
+  template:
+    metadata:
+      labels:
+        app: nest-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: localhost:5000/nest-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          # Wait for backend to be ready before starting frontend
+          echo "Waiting for backend service to be ready..."
+          until curl -s http://nest-backend:8000/api/v1/ > /dev/null 2>&1; do
+            echo "Backend service not ready yet. Waiting..."
+            sleep 5
+          done
+          echo "Backend is ready. Starting frontend..."
+          pnpm install
+          pnpm run dev
+        envFrom:
+        - configMapRef:
+            name: frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nest-frontend
+  namespace: nest
+spec:
+  selector:
+    app: nest-frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
