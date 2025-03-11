@@ -1,0 +1,15 @@
+# k8s/database/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nest-db
+  labels:
+    app: nest-db
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  selector:
+    app: nest-db
+  clusterIP: None

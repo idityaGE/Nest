@@ -1,0 +1,14 @@
+# k8s/backend/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nest-backend
+  labels:
+    app: nest-backend
+spec:
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http
+  selector:
+    app: nest-backend

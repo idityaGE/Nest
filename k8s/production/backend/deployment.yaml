@@ -1,0 +1,52 @@
+# k8s/backend/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nest-backend
+  labels:
+    app: nest-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nest-backend
+  template:
+    metadata:
+      labels:
+        app: nest-backend
+    spec:
+      containers:
+      - name: backend
+        image: arkid15r/owasp-nest-backend:production
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        - secretRef:
+            name: backend-secrets
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health/
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /home/owasp/data
+      volumes:
+      - name: data-volume
+        emptyDir: {}

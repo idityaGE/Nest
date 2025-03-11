@@ -19,6 +19,14 @@ kubectl apply -f frontend-deployment.yaml
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
+## Wait for the ingress controller to be ready
+kubectl get pods -n ingress-nginx
+
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=90s
+
 kubectl apply -f ingress.yaml
 
 
@@ -41,3 +49,7 @@ kind delete cluster --name nest
 
 
 so the problem I am facing is related to volume mount casue I am using wsl and my docker desktop is in windows.
+
+
+# Restart deployment
+kubectl rollout restart deployment nest-backend -n nest

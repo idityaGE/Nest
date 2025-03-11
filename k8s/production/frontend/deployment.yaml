@@ -1,0 +1,41 @@
+# k8s/frontend/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nest-frontend
+  labels:
+    app: nest-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nest-frontend
+  template:
+    metadata:
+      labels:
+        app: nest-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: arkid15r/owasp-nest-frontend:production
+        ports:
+        - containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
