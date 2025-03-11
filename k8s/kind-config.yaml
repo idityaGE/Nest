@@ -16,3 +16,6 @@ nodes:
   - containerPort: 443
     hostPort: 443
     protocol: TCP
+  extraMounts:
+  - hostPath: /home/adii/Desktop/GSoC2025/Nest
+    containerPath: /home/adii/Desktop/GSoC2025/Nest
