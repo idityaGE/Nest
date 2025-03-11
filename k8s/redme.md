@@ -9,9 +9,10 @@ docker build -t nest-frontend:local -f frontend/docker/Dockerfile.local frontend
 # Load images into kind
 kind load docker-image nest-backend:local --name nest
 kind load docker-image nest-frontend:local --name nest
-
+kind load docker-image postgres:16.4 --name nest
 
 kubectl apply -f nest-kubernetes-config.yaml
+kubectl config set-context --current --namespace=nest
 kubectl apply -f db-deployment.yaml
 kubectl apply -f backend-deployment.yaml
 kubectl apply -f frontend-deployment.yaml
@@ -19,8 +20,6 @@ kubectl apply -f frontend-deployment.yaml
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
 kubectl apply -f ingress.yaml
-
-
 
 
 
@@ -38,7 +37,7 @@ kubectl delete pod nest-backend-656db99c8b-2wzgg -n nest
 
 kubectl delete pods --all --all-namespaces
 
-kind delete cluster
+kind delete cluster --name nest
 
 
 so the problem I am facing is related to volume mount casue I am using wsl and my docker desktop is in windows.

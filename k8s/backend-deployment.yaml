@@ -22,7 +22,6 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          export PATH="/home/owasp/.venv/bin:$PATH"
           echo "Waiting for database to be ready..."
           until python -c "import socket; socket.socket().connect(('nest-db', 5432))" 2>/dev/null; do
             echo "Database not ready yet. Waiting..."
