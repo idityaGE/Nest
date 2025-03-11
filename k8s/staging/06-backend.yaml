@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nest-backend
+  namespace: nest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nest-backend
+  template:
+    metadata:
+      labels:
+        app: nest-backend
+    spec:
+      containers:
+      - name: backend
+        image: nest-backend:local
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        command: ["/bin/sh", "-c"]
+        args:
+          - >
+            python manage.py migrate &&
+            python manage.py runserver 0.0.0.0:8000
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        - secretRef:
+            name: backend-secrets
+        volumeMounts:
+        - name: backend-data
+          mountPath: /home/owasp/data
+      volumes:
+      - name: backend-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nest-backend
+  namespace: nest
+spec:
+  selector:
+    app: nest-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP

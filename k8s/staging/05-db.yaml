@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nest-db
+  namespace: nest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nest-db
+  template:
+    metadata:
+      labels:
+        app: nest-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16.4
+        ports:
+        - containerPort: 5432
+        envFrom:
+        - configMapRef:
+            name: db-config
+        - secretRef:
+            name: db-secrets
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "nest_user_dev", "-d", "nest_db_dev"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "nest_user_dev", "-d", "nest_db_dev"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: nest-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nest-db
+  namespace: nest
+spec:
+  selector:
+    app: nest-db
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP

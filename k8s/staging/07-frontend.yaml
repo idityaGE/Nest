@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nest-frontend
+  namespace: nest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nest-frontend
+  template:
+    metadata:
+      labels:
+        app: nest-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nest-frontend:local
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        command: ["/bin/sh", "-c"]
+        args:
+          - >
+            cd /home/owasp && 
+            pnpm run dev
+        envFrom:
+        - configMapRef:
+            name: frontend-config
+      volumes:
+      - name: frontend-modules
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nest-frontend
+  namespace: nest
+spec:
+  selector:
+    app: nest-frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: ClusterIP
