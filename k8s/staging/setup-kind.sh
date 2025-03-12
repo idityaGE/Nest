@@ -64,6 +64,7 @@ docker build -t nest-frontend:local -f docker/Dockerfile.local .
 echo "Loading images into kind cluster..."
 kind load docker-image nest-backend:local --name nest-cluster
 kind load docker-image nest-frontend:local --name nest-cluster
+kind load docker-image postgres:16.4 --name nest-cluster
 
 echo "Applying Kubernetes manifests..."
 cd ..
