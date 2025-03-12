@@ -14,32 +14,35 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT=true \
 
 WORKDIR /home/owasp
 
-COPY poetry.lock pyproject.toml ./
+COPY --chown=owasp:owasp poetry.lock pyproject.toml ./
 RUN poetry install --no-root --without dev --without test
 
-COPY apps apps
-COPY docker/entrypoint.sh entrypoint.sh
-COPY manage.py wsgi.py ./
-COPY settings settings
-COPY static static
-COPY templates templates
+COPY --chown=owasp:owasp apps apps
+COPY --chown=owasp:owasp docker/entrypoint.sh entrypoint.sh
+COPY --chown=owasp:owasp manage.py wsgi.py ./
+COPY --chown=owasp:owasp settings settings
+COPY --chown=owasp:owasp static static
+COPY --chown=owasp:owasp templates templates
 
 FROM python:3.13-slim
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends libpq-dev curl postgresql-client && \
+    apt-get install -y --no-install-recommends libpq-dev curl && \
     rm -rf /var/lib/apt/lists/* && \
     groupadd --system owasp && \
     useradd --system --create-home --home-dir /home/owasp -g owasp owasp
 
+# Change to local settings for testing
 ENV PATH="/home/owasp/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=settings.local \
+    DJANGO_CONFIGURATION=Local
 
 WORKDIR /home/owasp
 
-COPY --from=builder /home/owasp /home/owasp
+COPY --from=builder --chown=owasp:owasp /home/owasp /home/owasp
 RUN chmod +x /home/owasp/entrypoint.sh
 
 # Add health check for Kubernetes
