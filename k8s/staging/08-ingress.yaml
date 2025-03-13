@@ -32,3 +32,27 @@ spec:
             name: nest-backend
             port:
               number: 8000
+  - host: localhost
+    http:
+      paths:
+      - path: /(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: nest-frontend
+            port:
+              number: 3000
+      - path: /api/(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: nest-backend
+            port:
+              number: 8000
+      - path: /graphql/(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: nest-backend
+            port:
+              number: 8000
