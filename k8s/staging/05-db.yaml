@@ -29,13 +29,13 @@ spec:
           mountPath: /var/lib/postgresql/data
         readinessProbe:
           exec:
-            command: ["pg_isready", "-U", "nest_user_dev", "-d", "nest_db_dev"]
+            command: ["pg_isready", "-U", "postgres", "-d", "nest"]
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 5
         livenessProbe:
           exec:
-            command: ["pg_isready", "-U", "nest_user_dev", "-d", "nest_db_dev"]
+            command: ["pg_isready", "-U", "postgres", "-d", "nest"]
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5

@@ -27,4 +27,4 @@ USER nestapp
 EXPOSE 3000
 
 # Serve the static files from the dist directory
-ENTRYPOINT ["http-server", "dist", "-p", "3000"]
+ENTRYPOINT ["sh", "-c", "ls -la /app && (http-server /app/dist -p 3000 || http-server . -p 3000)"]

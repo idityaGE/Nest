@@ -55,15 +55,15 @@ kubectl wait --namespace ingress-nginx \
 echo "Building Docker images..."
 # Build backend image
 cd ../backend
-docker build -t nest-backend:local -f docker/Dockerfile.local .
+docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
 
 # Build frontend image
 cd ../frontend
-docker build -t nest-frontend:local -f docker/Dockerfile.local .
+docker build -t nest-frontend:k8s -f docker/Dockerfile.k8s .
 
 echo "Loading images into kind cluster..."
-kind load docker-image nest-backend:local --name nest-cluster
-kind load docker-image nest-frontend:local --name nest-cluster
+kind load docker-image nest-backend:k8s --name nest-cluster
+kind load docker-image nest-frontend:k8s --name nest-cluster
 kind load docker-image postgres:16.4 --name nest-cluster
 
 echo "Applying Kubernetes manifests..."

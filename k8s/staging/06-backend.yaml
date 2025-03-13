@@ -15,26 +15,16 @@ spec:
     spec:
       containers:
       - name: backend
-        image: nest-backend:local
+        image: nest-backend:k8s
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
-        command: ["/bin/sh", "-c"]
-        args:
-          - >
-            python manage.py migrate &&
-            python manage.py runserver 0.0.0.0:8000
+        command: ["/home/owasp/init-backend.sh", "/home/owasp/entrypoint.sh"]
         envFrom:
         - configMapRef:
             name: backend-config
         - secretRef:
             name: backend-secrets
-        volumeMounts:
-        - name: backend-data
-          mountPath: /home/owasp/data
-      volumes:
-      - name: backend-data
-        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -47,4 +37,5 @@ spec:
   ports:
   - port: 8000
     targetPort: 8000
-  type: ClusterIP
+    nodePort: 30008  # Will be mapped to 8000
+  type: NodePort  # Changed from ClusterIP

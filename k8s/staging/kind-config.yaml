@@ -15,3 +15,9 @@ nodes:
   - containerPort: 443
     hostPort: 443
     protocol: TCP
+  - containerPort: 30008  # For backend
+    hostPort: 8000
+    protocol: TCP
+  - containerPort: 30003  # For frontend
+    hostPort: 3000
+    protocol: TCP

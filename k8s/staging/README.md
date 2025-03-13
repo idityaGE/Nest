@@ -138,3 +138,70 @@ Note that this will lose data when the pod is deleted.
   - Set up SSL/TLS
   - Configure resource limits and requests
   - Set up monitoring and logging
+
+
+---
+
+### Some Extra Notes
+
+#### Option 2: Rollout Restart (Simpler)
+# 1. Rebuild the image
+cd /home/adii/Desktop/GSoC2025/Nest/backend
+docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
+
+# 2. Load the new image into kind
+kind load docker-image nest-backend:k8s --name nest-cluster
+
+# 3. Rollout restart (this will recreate the pods with the new image)
+kubectl -n nest rollout restart deployment/nest-backend
+
+
+#### Option 1: Full Replacement Process
+# 1. Stop the deployment
+kubectl -n nest scale deployment nest-backend --replicas=0
+
+# 2. Rebuild the image
+cd /home/adii/Desktop/GSoC2025/Nest/backend
+docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
+
+# 3. Load the new image into kind
+kind load docker-image nest-backend:k8s --name nest-cluster
+
+# 4. Restart the deployment
+kubectl -n nest scale deployment nest-backend --replicas=1
+
+
+#### Option 3: Delete & Reapply
+# 1. Delete the deployment
+kubectl -n nest delete -f k8s/staging/06-backend.yaml
+
+# 2. Rebuild the image
+cd /home/adii/Desktop/GSoC2025/Nest/backend
+docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
+
+# 3. Load the new image into kind
+kind load docker-image nest-backend:k8s --name nest-cluster
+
+# 4. Reapply the deployment
+kubectl apply -f k8s/staging/06-backend.yaml
+
+
+
+
+
+### Solution for network 
+```bash
+adii@Virus:~/Desktop/GSoC2025/Nest/k8s/staging$ sudo su
+[sudo] password for adii: 
+root@Virus:/home/adii/Desktop/GSoC2025/Nest/k8s/staging# vim /etc/hosts
+
+# add this line "127.0.0.1 nest.local"
+
+# Get the WSL2 IP address:
+ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+# Example output: 172.28.135.112
+
+# Open C:\Windows\System32\drivers\etc\hosts
+# Update your Windows hosts file again:
+172.28.135.112 nest.local
+```

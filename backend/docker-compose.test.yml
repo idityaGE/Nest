@@ -30,10 +30,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["/home/owasp/docker/init-backend.sh", "/home/owasp/entrypoint.sh"]
-    volumes:
-      - ./docker/init-backend.sh:/home/owasp/docker/init-backend.sh
-      - ./data:/home/owasp/data
+    command: ["/home/owasp/init-backend.sh", "/home/owasp/entrypoint.sh"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/ || exit 1"]
       interval: 30s

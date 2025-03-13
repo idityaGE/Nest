@@ -15,21 +15,13 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: nest-frontend:local
+        image: nest-frontend:k8s
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
-        command: ["/bin/sh", "-c"]
-        args:
-          - >
-            cd /home/owasp && 
-            pnpm run dev
         envFrom:
         - configMapRef:
             name: frontend-config
-      volumes:
-      - name: frontend-modules
-        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -42,4 +34,5 @@ spec:
   ports:
   - port: 3000
     targetPort: 3000
-  type: ClusterIP
+    nodePort: 30003  # Will be mapped to 3000
+  type: NodePort  # Changed from ClusterIP
