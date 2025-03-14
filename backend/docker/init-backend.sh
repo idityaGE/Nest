@@ -9,7 +9,7 @@ import sys
 
 for i in range(30):
     try:
-        psycopg.connect('dbname=nest user=postgres password=postgres host=db port=5432')
+        psycopg.connect('dbname=nest user=postgres password=postgres host=nest-db port=5432')
         print('Database is ready!')
         sys.exit(0)
     except psycopg.OperationalError:
@@ -20,23 +20,17 @@ print('Database connection failed')
 sys.exit(1)
 "
 
+echo "Running migrations..."
+python manage.py migrate
+
 echo "Loading Nest data (equivalent to make load-data)..."
 python manage.py load_data
 
-# Skip Algolia indexing if we're in a test/local environment
-# if [[ "${DJANGO_CONFIGURATION}" != "Local" && "${SKIP_ALGOLIA_INDEXING}" != "true" ]]; then
+# Add || true to prevent failures from stopping the script
 echo "Indexing Nest data in Algolia..."
-python manage.py algolia_reindex
-python manage.py algolia_update_replicas
-python manage.py algolia_update_synonyms
-# else
-#   echo "Skipping Algolia indexing in local/test environment"
-# fi
-
-# echo "Loading Nest data (equivalent to make load-data)..."
-# make load-data
-# echo "Indexing Nest data in Algolia..."
-# make index-data
+python manage.py algolia_reindex || true
+python manage.py algolia_update_replicas || true
+python manage.py algolia_update_synonyms || true
 
 echo "Backend initialization completed!"
 exec "$@"
