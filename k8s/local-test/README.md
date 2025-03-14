@@ -205,3 +205,9 @@ ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
 # Update your Windows hosts file again:
 172.28.135.112 nest.local
 ```
+
+
+### exec into k8s 
+```bash
+kubectl exec -it deployment/nest-backend -n nest -- /bin/bash
+```
