@@ -1,6 +1,6 @@
-# OWASP Nest on Kubernetes with kind
+# OWASP Nest on Kubernetes with Kind
 
-This directory contains Kubernetes manifests and scripts to run OWASP Nest locally using kind (Kubernetes IN Docker).
+This document provides instructions for setting up OWASP Nest in a local Kubernetes environment using Kind (Kubernetes IN Docker).
 
 ## Prerequisites
 
@@ -13,114 +13,188 @@ This directory contains Kubernetes manifests and scripts to run OWASP Nest local
 
 ```
 k8s/
-├── 01-namespace.yaml
-├── 02-configmaps.yaml
-├── 03-secrets.yaml
-├── 04-persistent-volumes.yaml
-├── 05-db.yaml
-├── 06-backend.yaml
-├── 07-frontend.yaml
-├── 08-ingress.yaml
-├── setup-kind.sh
-├── cleanup-kind.sh
-└── README.md
+├── local-test/
+│   ├── 00-kind-config.yaml
+│   ├── 01-namespace.yaml
+│   ├── 02-configmaps.yaml
+│   ├── 03-secrets.yaml
+│   ├── 04-persistent-volumes.yaml
+│   ├── 05-db.yaml
+│   ├── 06-backend.yaml
+│   ├── 07-frontend.yaml
+│   ├── 08-ingress.yaml
+│   ├── setup-kind.sh
+│   ├── cleanup-kind.sh
+│   └── README.md
 ```
 
-## Setup Instructions
+## Quick Start
 
-1. Clone the OWASP Nest repository:
+### Setup
 
-```bash
-git clone https://github.com/<your-account>/<nest-fork>
-cd <nest-fork>
-```
-
-2. Create a new directory for Kubernetes files and copy all the YAML files and scripts:
+1. Run the setup script:
 
 ```bash
-mkdir -p k8s
-# Copy all the YAML files and scripts to the k8s directory
-```
-
-3. Update the secrets in `03-secrets.yaml` with your own values:
-
-- `DJANGO_SECRET_KEY`: Generate a random secret key
-- `DJANGO_ALGOLIA_APPLICATION_ID`: Your Algolia application ID
-- `DJANGO_ALGOLIA_WRITE_API_KEY`: Your Algolia write API key
-
-4. Make the scripts executable:
-
-```bash
-chmod +x k8s/setup-kind.sh
-chmod +x k8s/cleanup-kind.sh
-```
-
-5. Run the setup script:
-
-```bash
-cd k8s
+cd k8s/local-test
+chmod +x setup-kind.sh
 ./setup-kind.sh
 ```
 
-6. Update your `/etc/hosts` file to add the entry:
-
-```
-127.0.0.1 nest.local
-```
-
-7. Access the application:
-
-- Frontend: http://nest.local
-- Backend API: http://nest.local/api/v1/
-- GraphQL: http://nest.local/graphql/
-
-8. Load initial data and index it:
+2. Configure DNS for host access:
 
 ```bash
-kubectl exec -it deployment/nest-backend -n nest -- make load-data
-kubectl exec -it deployment/nest-backend -n nest -- make index-data
+# In WSL, add to /etc/hosts:
+sudo sh -c 'echo "127.0.0.1 nest.local" >> /etc/hosts'
+
+# In Windows, add to C:\Windows\System32\drivers\etc\hosts:
+# Get WSL IP first
+ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+# Add this IP with nest.local to Windows hosts file
 ```
 
-## Cleanup Instructions
+3. Access the application:
 
-To delete all resources and the kind cluster, run:
+- Frontend: http://nest.local
+- API: http://nest.local/api/v1/
+- GraphQL: http://nest.local/graphql/
+
+### Cleanup
 
 ```bash
 ./cleanup-kind.sh
 ```
 
+## Managing Deployments
+
+### Updating Backend Image
+
+#### Option 1: Simple Rollout Restart
+
+```bash
+# Rebuild the backend image
+cd /home/adii/Desktop/GSoC2025/Nest/backend
+docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
+
+# Load into kind
+kind load docker-image nest-backend:k8s --name nest-cluster
+
+# Restart deployment
+kubectl -n nest rollout restart deployment/nest-backend
+```
+
+#### Option 2: Scale Down/Up
+
+```bash
+# Stop deployment
+kubectl -n nest scale deployment nest-backend --replicas=0
+
+# Rebuild and load image
+cd /home/adii/Desktop/GSoC2025/Nest/backend
+docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
+kind load docker-image nest-backend:k8s --name nest-cluster
+
+# Start deployment
+kubectl -n nest scale deployment nest-backend --replicas=1
+```
+
+#### Option 3: Delete and Reapply
+
+```bash
+# Delete deployment
+kubectl -n nest delete -f k8s/local-test/06-backend.yaml
+
+# Rebuild and load image
+cd /home/adii/Desktop/GSoC2025/Nest/backend
+docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
+kind load docker-image nest-backend:k8s --name nest-cluster
+
+# Reapply deployment
+kubectl apply -f k8s/local-test/06-backend.yaml
+```
+
+## Useful Commands
+
+### Monitoring and Debugging
+
+```bash
+# View logs
+kubectl logs -f -l app=nest-backend -n nest
+kubectl logs -f -l app=nest-frontend -n nest
+kubectl logs -f -l app=nest-db -n nest
+
+# View pod status
+kubectl get pods -n nest
+
+# Describe resources
+kubectl describe pod [pod-name] -n nest
+kubectl describe deployment nest-backend -n nest
+
+# Set default namespace
+kubectl config set-context --current --namespace=nest
+```
+
+### Accessing Containers
+
+```bash
+# Execute shell in container
+kubectl exec -it deployment/nest-backend -n nest -- /bin/bash
+
+# Run commands directly
+kubectl exec -it deployment/nest-backend -n nest -- python manage.py shell
+```
+
+### Cleanup Commands
+
+```bash
+# Delete specific pod (will be recreated)
+kubectl delete pod [pod-name] -n nest
+
+# Delete all pods in all namespaces
+kubectl delete pods --all --all-namespaces
+
+# Delete cluster
+kind delete cluster --name nest-cluster
+```
+
 ## Troubleshooting
 
-### 1. Images not loading into kind cluster
+### Network Issues
 
-If you encounter issues with loading images into the kind cluster, you can try building them directly inside the cluster:
+If you're running in WSL2, you need to:
 
-```bash
-# For backend
-docker exec -it nest-cluster-control-plane bash -c "cd /home/owasp && docker build -t nest-backend:local -f docker/Dockerfile.local ."
+1. Add `127.0.0.1 nest.local` to WSL's hosts
+2. Add your WSL2 IP followed by `nest.local` to Windows hosts file `C:\Windows\System32\drivers\etc\hosts`
+3. Ensure ports 80 and 443 are accessible from Windows
 
-# For frontend
-docker exec -it nest-cluster-control-plane bash -c "cd /home/owasp && docker build -t nest-frontend:local -f docker/Dockerfile.local ."
-```
+### Database Connection Issues
 
-### 2. Database connection issues
+If the backend can't connect to the database:
 
-If the backend can't connect to the database, check if the database pod is running and ready:
-
-```bash
-kubectl get pods -n nest
-```
-
-You can also check the logs:
+1. Check if database pod is running: `kubectl get pods -n nest`
+2. View database logs: `kubectl logs -n nest -l app=nest-db`
+3. Ensure backend environment variables match database service name
 
 ```bash
-kubectl logs -n nest deployment/nest-db
-kubectl logs -n nest deployment/nest-backend
+ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+# Example output: 172.28.135.112
+```
+Update your Windows hosts file again:
+`172.28.135.112 nest.local`
+
+
+### Image Loading Issues
+
+If images aren't loading properly:
+
+```bash
+# Verify images are loaded
+kind get clusters
+docker exec -it nest-cluster-control-plane crictl images
 ```
 
-### 3. Volume mounting issues
+### Volume Issues
 
-If you encounter issues with persistent volumes, you can use emptyDir for testing:
+For persistent volume problems, consider using emptyDir for testing:
 
 ```yaml
 volumes:
@@ -128,86 +202,28 @@ volumes:
   emptyDir: {}
 ```
 
-Note that this will lose data when the pod is deleted.
+### Port Forwarding
+```bash
+# Start frontend port forwarding
+kubectl port-forward -n nest svc/nest-frontend 3000:3000 --address 0.0.0.0 &
+echo "Frontend available at http://localhost:3000"
+# Start backend port forwarding
+kubectl port-forward -n nest svc/nest-backend 8000:8000 --address 0.0.0.0 &
+echo "Backend available at http://localhost:8000"
+
+# Stop port forwarding
+jobs
+kill %1
+kill %2
+```
 
 ## Notes
 
-- This setup is for local development only. For production, you would need to:
-  - Use a proper database with persistent storage
-  - Configure proper secrets management
-  - Set up SSL/TLS
-  - Configure resource limits and requests
-  - Set up monitoring and logging
+This setup is for development purposes only. For production, implement:
+- Proper secrets management
+- SSL/TLS encryption
+- Resource limits
+- Monitoring and logging
+- High-availability configurations
 
-
----
-
-### Some Extra Notes
-
-#### Option 2: Rollout Restart (Simpler)
-# 1. Rebuild the image
-cd /home/adii/Desktop/GSoC2025/Nest/backend
-docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
-
-# 2. Load the new image into kind
-kind load docker-image nest-backend:k8s --name nest-cluster
-
-# 3. Rollout restart (this will recreate the pods with the new image)
-kubectl -n nest rollout restart deployment/nest-backend
-
-
-#### Option 1: Full Replacement Process
-# 1. Stop the deployment
-kubectl -n nest scale deployment nest-backend --replicas=0
-
-# 2. Rebuild the image
-cd /home/adii/Desktop/GSoC2025/Nest/backend
-docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
-
-# 3. Load the new image into kind
-kind load docker-image nest-backend:k8s --name nest-cluster
-
-# 4. Restart the deployment
-kubectl -n nest scale deployment nest-backend --replicas=1
-
-
-#### Option 3: Delete & Reapply
-# 1. Delete the deployment
-kubectl -n nest delete -f k8s/staging/06-backend.yaml
-
-# 2. Rebuild the image
-cd /home/adii/Desktop/GSoC2025/Nest/backend
-docker build -t nest-backend:k8s -f docker/Dockerfile.k8s .
-
-# 3. Load the new image into kind
-kind load docker-image nest-backend:k8s --name nest-cluster
-
-# 4. Reapply the deployment
-kubectl apply -f k8s/staging/06-backend.yaml
-
-
-
-
-
-### Solution for network 
-```bash
-adii@Virus:~/Desktop/GSoC2025/Nest/k8s/staging$ sudo su
-[sudo] password for adii: 
-root@Virus:/home/adii/Desktop/GSoC2025/Nest/k8s/staging# vim /etc/hosts
-
-# add this line "127.0.0.1 nest.local"
-
-# Get the WSL2 IP address:
-ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
-# Example output: 172.28.135.112
-
-# Open C:\Windows\System32\drivers\etc\hosts
-# Update your Windows hosts file again:
-172.28.135.112 nest.local
-```
-
-
-### exec into k8s 
-```bash
-kubectl exec -it deployment/nest-backend -n nest -- /bin/bash
-```
+Similar code found with 1 license type
