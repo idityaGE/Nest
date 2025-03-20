@@ -13,6 +13,13 @@ spec:
       labels:
         app: nest-backend
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/worker
+                operator: Exists
       containers:
       - name: backend
         image: nest-backend:k8s
@@ -45,4 +52,4 @@ spec:
   - port: 8000
     targetPort: 8000
     nodePort: 30008  # Will be mapped to 8000
-  type: NodePort  # Changed from ClusterIP
+  type: NodePort
