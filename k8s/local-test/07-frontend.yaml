@@ -13,13 +13,13 @@ spec:
       labels:
         app: nest-frontend
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: node-role.kubernetes.io/worker
-                operator: Exists
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #       - matchExpressions:
+      #         - key: node-role.kubernetes.io/worker
+      #           operator: Exists
       containers:
       - name: frontend
         image: nest-frontend:k8s
@@ -41,5 +41,4 @@ spec:
   ports:
   - port: 3000
     targetPort: 3000
-    nodePort: 30003  # Will be mapped to 3000
-  type: NodePort
+  type: ClusterIP
