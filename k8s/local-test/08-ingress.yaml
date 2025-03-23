@@ -4,33 +4,14 @@ metadata:
   name: nest-ingress
   namespace: nest
   annotations:
-    nginx.ingress.kubernetes.io/use-regex: "false"
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   rules:
-  - host: nest.local
+  - host: nest.frontend
     http:
       paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: nest-backend
-            port:
-              number: 8000
-      - path: /graphql
-        pathType: Prefix
-        backend:
-          service:
-            name: nest-backend
-            port:
-              number: 8000
-      - path: /idx
-        pathType: Prefix
-        backend:
-          service:
-            name: nest-backend
-            port:
-              number: 8000
       - path: /
         pathType: Prefix
         backend:
@@ -38,3 +19,13 @@ spec:
             name: nest-frontend
             port:
               number: 3000
+  - host: nest.backend
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nest-backend
+            port:
+              number: 8000

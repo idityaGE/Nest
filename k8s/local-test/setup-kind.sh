@@ -20,18 +20,34 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
+# Check if Helm is installed
+if ! command -v helm &> /dev/null; then
+    echo "Helm is not installed. Please install it first: https://helm.sh/docs/intro/install/"
+    exit 1
+fi
+
 echo "Creating kind cluster..."
 kind create cluster --config 00-kind-config.yaml --name nest-cluster
 
 echo "Installing NGINX Ingress Controller..."
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+helm install nginx-ingress ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx \
+  --create-namespace \
+  --set controller.publishService.enabled=true \
+  --set controller.service.externalTrafficPolicy=Local
 
 echo "Waiting for NGINX Ingress Controller to be ready..."
 sleep 5
 kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
-  --timeout=120s || true
+  --timeout=180s || echo "Warning: Ingress controller not ready yet, but continuing..."
+
+echo "Checking ingress controller status:"
+kubectl get pods -n ingress-nginx
+kubectl get svc -n ingress-nginx
 
 echo "Giving additional time for webhook initialization..."
 sleep 5
@@ -94,11 +110,16 @@ kubectl wait --namespace nest \
 
 kubectl apply -f 08-ingress.yaml
 
+echo "Adding entries to /etc/hosts file (requires sudo)..."
+grep -q "nest.frontend" /etc/hosts || sudo sh -c 'echo "127.0.0.1 nest.frontend" >> /etc/hosts'
+grep -q "nest.backend" /etc/hosts || sudo sh -c 'echo "127.0.0.1 nest.backend" >> /etc/hosts'
+
 echo "---------------------------------------"
 echo "Setup complete! Access the application:"
-echo "Frontend: http://localhost:3000/"
-echo "Backend API: http://localhost:8000/api/"
-echo "GraphQL: http://localhost:8000/graphql/"
+echo "Frontend: http://nest.frontend/"
+echo "Backend API: http://nest.backend/api/v1/"
+echo "GraphQL: http://nest.backend/graphql/"
+echo "IDX: http://nest.backend/idx/"
 echo "---------------------------------------"
 echo "To check pod status: kubectl get pods -n nest"
 echo "To check logs: kubectl logs -n nest -l app=nest-backend"
