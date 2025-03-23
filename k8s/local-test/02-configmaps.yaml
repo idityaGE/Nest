@@ -20,6 +20,7 @@ metadata:
   name: frontend-config
   namespace: nest
 data:
+  # Vite environment variables (prefixed with VITE_) are embedded during build time, not runtime.
   VITE_API_URL: "http://nest.backend/api/v1"
   VITE_GRAPHQL_URL: "http://nest.backend/graphql/"
   VITE_IDX_URL: "http://nest.backend/idx/"

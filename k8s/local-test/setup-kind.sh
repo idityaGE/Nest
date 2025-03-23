@@ -36,7 +36,7 @@ helm install nginx-ingress ingress-nginx/ingress-nginx \
   --namespace ingress-nginx \
   --create-namespace \
   --set controller.publishService.enabled=true \
-  --set controller.service.externalTrafficPolicy=Local
+  --set controller.hostNetwork=true
 
 echo "Waiting for NGINX Ingress Controller to be ready..."
 sleep 5
