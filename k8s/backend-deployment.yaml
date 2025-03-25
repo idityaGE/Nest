@@ -15,19 +15,19 @@ spec:
     spec:
       containers:
       - name: backend
-        image: nest-backend:local
-        imagePullPolicy: Never
+        image: localhost:5000/nest-backend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         command: ["/bin/bash", "-c"]
         args:
         - |
           echo "Waiting for database to be ready..."
-          sleep 10
-          echo "Setting up Django environment..."
-          export DJANGO_SETTINGS_MODULE=config.settings
-          export PYTHONPATH=/home/owasp
-          echo "Running migrations..."
+          until python -c "import socket; socket.socket().connect(('nest-db', 5432))" 2>/dev/null; do
+            echo "Database not ready yet. Waiting..."
+            sleep 2
+          done
+          echo "Database is ready. Setting up Django environment..."
           python manage.py migrate
           echo "Starting server..."
           python manage.py runserver 0.0.0.0:8000
@@ -36,6 +36,10 @@ spec:
           value: "config.settings"
         - name: PYTHONPATH
           value: "/home/owasp"
+        - name: DJANGO_CONFIGURATION
+          value: "Local"
+        - name: DJANGO_DEBUG
+          value: "True"
         envFrom:
         - configMapRef:
             name: backend-config

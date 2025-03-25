@@ -15,18 +15,25 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: nest-frontend:local
-        imagePullPolicy: Never
+        image: localhost:5000/nest-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
-        envFrom:
-        - configMapRef:
-            name: frontend-config
         command: ["/bin/bash", "-c"]
         args:
         - |
-          pnpm install &&
+          # Wait for backend to be ready before starting frontend
+          echo "Waiting for backend service to be ready..."
+          until curl -s http://nest-backend:8000/api/v1/ > /dev/null 2>&1; do
+            echo "Backend service not ready yet. Waiting..."
+            sleep 5
+          done
+          echo "Backend is ready. Starting frontend..."
+          pnpm install
           pnpm run dev
+        envFrom:
+        - configMapRef:
+            name: frontend-config
 ---
 apiVersion: v1
 kind: Service
