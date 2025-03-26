@@ -5,7 +5,7 @@ metadata:
   labels:
     type: local
 spec:
-  storageClassName: standard
+  storageClassName: local-storage
   capacity:
     storage: 1Gi
   accessModes:
@@ -19,7 +19,7 @@ metadata:
   name: nest-db-pvc
   namespace: nest
 spec:
-  storageClassName: standard
+  storageClassName: local-storage
   accessModes:
     - ReadWriteOnce
   resources:

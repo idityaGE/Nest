@@ -1,13 +1,27 @@
-# k8s/database/pvc.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nest-db-pv
+  labels:
+    type: local
+spec:
+  storageClassName: nest-production-storage
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data/db"
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-data
+  name: nest-db-pvc
   namespace: nest
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
-  storageClassName: standard
+      storage: 10Gi
+  storageClassName: nest-production-storage

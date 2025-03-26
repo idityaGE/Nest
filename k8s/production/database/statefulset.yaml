@@ -1,12 +1,9 @@
-# k8s/database/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: nest-db
-  labels:
-    app: nest-db
+  namespace: nest
 spec:
-  serviceName: "nest-db"
   replicas: 1
   selector:
     matchLabels:
@@ -16,54 +13,40 @@ spec:
       labels:
         app: nest-db
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/worker
+                operator: Exists
       containers:
       - name: postgres
         image: postgres:16.4
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5432
-          name: postgres
-        env:
-        - name: POSTGRES_DB
-          valueFrom:
-            secretKeyRef:
-              name: db-secrets
-              key: POSTGRES_DB
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: db-secrets
-              key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: db-secrets
-              key: POSTGRES_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: db-config
+        - secretRef:
+            name: db-secrets
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
         readinessProbe:
           exec:
-            command:
-            - pg_isready
-            - -U
-            - nest_user_production
-            - -d
-            - nest_db_production
+            command: ["pg_isready", "-U", "postgres", "-d", "nest"]
           initialDelaySeconds: 5
-          periodSeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
         livenessProbe:
           exec:
-            command:
-            - pg_isready
-            - -U
-            - nest_user_production
-          initialDelaySeconds: 30
+            command: ["pg_isready", "-U", "postgres", "-d", "nest"]
+          initialDelaySeconds: 10
           periodSeconds: 10
-  volumeClaimTemplates:
-  - metadata:
-      name: postgres-data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 1Gi
+          timeoutSeconds: 5
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: nest-db-pvc

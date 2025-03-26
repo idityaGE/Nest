@@ -30,20 +30,14 @@ echo "Creating kind cluster..."
 kind create cluster --config 00-kind-config.yaml --name nest-cluster
 
 echo "Installing NGINX Ingress Controller..."
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-helm install nginx-ingress ingress-nginx/ingress-nginx \
-  --namespace ingress-nginx \
-  --create-namespace \
-  --set controller.publishService.enabled=true \
-  --set controller.hostNetwork=true
+kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
 
 echo "Waiting for NGINX Ingress Controller to be ready..."
 sleep 5
 kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
-  --timeout=180s || echo "Warning: Ingress controller not ready yet, but continuing..."
+  --timeout=90s || echo "Warning: Ingress controller not ready yet, but continuing..."
 
 echo "Checking ingress controller status:"
 kubectl get pods -n ingress-nginx
@@ -113,6 +107,8 @@ kubectl apply -f 08-ingress.yaml
 echo "Adding entries to /etc/hosts file (requires sudo)..."
 grep -q "nest.frontend" /etc/hosts || sudo sh -c 'echo "127.0.0.1 nest.frontend" >> /etc/hosts'
 grep -q "nest.backend" /etc/hosts || sudo sh -c 'echo "127.0.0.1 nest.backend" >> /etc/hosts'
+
+
 
 echo "---------------------------------------"
 echo "Setup complete! Access the application:"
