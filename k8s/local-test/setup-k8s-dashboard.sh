@@ -23,4 +23,4 @@ echo "Starting dashboard proxy..."
 echo "Dashboard will be available at: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/"
 echo "Use the token printed above to log in."
 echo "Press Ctrl+C to stop the proxy when done."
-kubectl proxy
+kubectl proxy &

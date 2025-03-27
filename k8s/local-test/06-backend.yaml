@@ -39,6 +39,13 @@ spec:
           initialDelaySeconds: 120
           periodSeconds: 10
           failureThreshold: 10
+        # resources:
+        #   requests:
+        #     memory: "128Mi"
+        #     cpu: "250m"
+        #   limits:
+        #     memory: "256Mi"
+        #     cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
